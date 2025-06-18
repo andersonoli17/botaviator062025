@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulação de Ganho</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    .dashboard { display: flex; }
+    .sidebar { width: 200px; background-color: #333; color: #fff; min-height: 100vh; padding: 20px; }
+    .sidebar h2 { color: #fff; }
+    .sidebar ul { list-style: none; padding: 0; }
+    .sidebar ul li { margin-bottom: 10px; }
+    .sidebar ul li a { color: #fff; text-decoration: none; }
+    .content { flex: 1; padding: 20px; }
+    form { margin-bottom: 20px; }
+    form label { display: block; margin: 10px 0 5px; font-weight: bold; }
+    form input, form select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    form button { margin-top: 20px; background-color: #28a745; color: #fff; border: none; padding: 10px; border-radius: 4px; cursor: pointer; }
+    form button:hover { background-color: #218838; }
+    .resultado { margin-top: 20px; padding: 10px; background: #e9ecef; border-left: 4px solid #007bff; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    table, th, td { border: 1px solid #ddd; }
+    th, td { padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Sidebar do Dashboard -->
+    <div class="sidebar">
+      <h2>Menu</h2>
+      <ul>
+        <li><a href="{{ url_for('index') }}">Resultados</a></li>
+        <li><a href="{{ url_for('simulacao') }}">Simulação de Ganho</a></li>
+        <li><a href="{{ url_for('velas_altas') }}">Velas Altas</a></li>
+        <li><a href="{{ url_for('logout') }}">Sair</a></li>
+      </ul>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <div class="content">
+      <h1>Simulação de Ganho</h1>
+      <form method="POST">
+        <label for="data">Data:</label>
+        <input type="date" id="data" name="data" value="{{ request.form.get('data', data_padrao) }}">
+
+        <label for="valor_aposta">Valor da Aposta:</label>
+        <input type="number" id="valor_aposta" name="valor_aposta" step="0.01" value="{{ request.form.get('valor_aposta', valor_aposta_padrao) }}">
+
+        <label for="valor_jogada">Valor da Jogada:</label>
+        <input type="number" id="valor_jogada" name="valor_jogada" step="0.01" value="{{ request.form.get('valor_jogada', valor_jogada_padrao) }}">
+
+        <label for="jogou">Jogou:</label>
+        <select id="jogou" name="jogou">
+          <option value="" selected>Selecione</option>
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
+
+        <label for="joogou_ante">Jogou Ante:</label>
+        <select id="joogou_ante" name="joogou_ante">
+          <option value="" selected>Selecione</option>
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
+
+        <button type="submit">Simular</button>
+      </form>
+
+      {% if resultado %}
+      <div class="resultado">
+      <div class="resultado">
+        <h3>Resultado da Simulação</h3>
+        <p>
+            <strong>Lucro Total:</strong>
+            <span style="color: green;">🟢 {{ resultado.lucro_total }}</span>
+        </p>
+        <p>
+            <strong>Ganho Green:</strong>
+            <span style="color: green;">🟢 {{ resultado.lucro_green }}</span>
+        </p>
+        <p>
+            <strong>Perda Red:</strong>
+            <span style="color: red;">🔴 {{ resultado.lucro_red }}</span>
+        </p>
+        <p>
+            <strong>Total Green:</strong>
+            <span style="color: green;">{{ resultado.total_green }}</span>
+        </p>
+        <p>
+            <strong>Total Red:</strong>
+            <span style="color: red;">{{ resultado.total_red }}</span>
+        </p>
+        <p>
+            <strong>Total de Jogadas:</strong> {{ resultado.total_jogadas }}
+        </p>
+        <p>
+            <strong>Porcentagem Green:</strong>
+            <span style="color: green;">🟢 {{ resultado.porcentagem_green }}%</span>
+        </p>
+        </div>
+
+
+
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

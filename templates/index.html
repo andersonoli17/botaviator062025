@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Output do Worker</title>
+</head>
+<body>
+    <h1>Saída do Worker</h1>
+    <pre id="output"></pre>
+
+    <script>
+        const outputElement = document.getElementById("output");
+        const eventSource = new EventSource("/output");
+        
+        eventSource.onmessage = function(event) {
+            outputElement.textContent += event.data;  // Adiciona nova saída
+        };
+    </script>
+</body>
+</html>

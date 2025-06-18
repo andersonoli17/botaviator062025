@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valores e Horas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+        
+        .row { display: flex; flex-wrap: wrap; justify-content: space-between; width: 100%; margin: 10px 0; }
+        .box { flex: 1; margin: 5px; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); text-align: center; font-size: 16px; transition: background-color 0.3s; min-width: 100px; }
+        .purple { background-color: #800080; color: white; }
+        .blue { background-color: #0000FF; color: white; }
+        .rose { background-color: #FF007F; color: white; }
+        .filter-section { margin-bottom: 20px; width: 100%; }
+        input[type="date"], select, button { padding: 8px; font-size: 16px; }
+        button { cursor: pointer; margin-left: 10px; border: none; border-radius: 5px; background-color: #007BFF; color: white; }
+        button[type="button"] { background-color: #6c757d; }
+        
+        .error-message { color: red; font-size: 16px; }
+        .sort-button { background: none; border: none; cursor: pointer; font-size: 20px; color: inherit; margin-left: 5px; }
+        #loading { display: none; font-size: 18px; color: #007BFF; }
+
+        @media (max-width: 600px) {
+            .box { font-size: 14px; }
+            input[type="date"], select, button { font-size: 14px; }
+            button { padding: 6px; }
+            .row { flex-direction: column; align-items: stretch; }
+        }
+
+        /* Wrapper para o layout do dashboard */
+        .dashboard {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Barra lateral */
+        .sidebar {
+            width: 250px; /* Largura fixa da barra lateral */
+            height: 100vh; /* altura da tela inteira */
+            background: #333;
+            color: white;
+            padding: 20px;
+            position: fixed; /* Barra lateral fixa à esquerda */
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 15px 0;
+        }
+
+        .sidebar ul li a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+            background: #444;
+            border-radius: 5px;
+        }
+
+        .sidebar ul li a:hover {
+            background: #555;
+        }
+
+        /* Conteúdo */
+        .content {
+            flex: 1;
+            margin-left: 250px; /* Espaço da barra lateral */
+            padding: 20px;
+            background-color: #fff;
+            min-height: 100vh; /* altura mínima da tela inteira */
+            overflow-y: auto; /* Adiciona rolagem vertical se necessário */
+        }
+
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        input[type="date"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Estilo para resultados */
+        h2 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+    </style>
+    
+</head>
+<body>
+    <!-- Wrapper do Dashboard -->
+    <div class="dashboard">
+    <!-- Barra Lateral -->
+    <div class="sidebar">
+        <h2>Menu</h2>
+        <ul>
+            <li><a href="{{ url_for('index') }}">Resultados</a></li>
+            <li><a href="{{ url_for('simulacao') }}">Simulação de Ganho</a></li>
+            <li><a href="{{ url_for('velas_altas') }}">Velas Altas</a></li>
+            <li><a href="{{ url_for('logout') }}">Sair</a></li>
+        </ul>
+    </div>
+    <div class="content"> <!-- Mudança aqui de .container para .content -->
+        <h1>GoathBet</h1>
+        <div class="filter-section">
+            <form id="filterForm" method="POST" onsubmit="showLoading();">
+                <label for="data">Selecione a Data:</label>
+                <input type="date" id="data" name="data" value="{{ request.form.get('data', '') }}" required>
+                
+                <label for="jogou">Filtrar por Jogou:</label>
+                <select id="jogou" name="jogou">
+                    <option value="">Todos</option>
+                    <option value="jogado" {% if request.form.get('jogou') == 'jogado' %}selected{% endif %}>Jogado</option>
+                    <option value="NaoJogou" {% if request.form.get('jogou') == 'NaoJogou' %}selected{% endif %}>Não Jogou</option>
+                </select>
+                <h1></h1>   				
+				<label for="joogou_ante">Filtrar Jogou Anter.:</label>
+                <select id="joogou_ante" name="joogou_ante">
+                    <option value="">Todos</option>
+                    <option value="jogado" {% if request.form.get('joogou_ante') == 'jogado' %}selected{% endif %}>Jogado</option>
+                    <option value="NaoJogou" {% if request.form.get('joogou_ante') == 'NaoJogou' %}selected{% endif %}>Não Jogou</option>
+                </select>
+        <h2></h2>        
+        <form id="filterForm" method="POST" onsubmit="showLoading();">
+            <!-- Campos de filtro -->
+            <button type="submit">Filtrar</button>
+            <button type="button" onclick="resetFilters();">Resetar Filtros</button>
+            <button type="button" onclick="updateValues();">Atualizar Valores</button>
+            <!-- Botão para exportar o CSV -->
+            <button type="submit" formaction="{{ url_for('download_csv') }}">Exportar para CSV</button>
+        </form>
+            </form>
+        </div>
+        <p id="loading">Carregando dados...</p>
+
+        {% if not df.empty %}
+            <div id="dataContainer">
+                <div class="row header">
+                    <div class="box">Valor Primeira Linha
+                        <button class="sort-button" onclick="sortData('valor')">
+                            <i class="fas fa-arrow-up" id="valorSortIcon"></i>
+                        </button>
+                    </div>
+                    <div class="box">Hora
+                        <button class="sort-button" onclick="sortData('hora')">
+                            <i class="fas fa-arrow-up" id="horaSortIcon"></i>
+                        </button>
+                    </div>
+                    <div class="box">Cor Coluna 6 Atual</div>
+                    <div class="box">Cor Prevista Coluna 6</div>                
+                    <div class="box">% Pague</div>
+                    <div class="box">% Tome</div>
+                    <div class="box">Saldo Conta</div>
+                    <div class="box">% 12 Primeiros Valores 1.X</div>
+                    <div class="box">Jogou</div>
+					<div class="box">joogou_ante</div>  
+					<div class="box">Jogadas_anterior</div> 
+					<div class="box">S_pri_linha</div> 
+					<div class="box">S_seg_linha</div> 
+					<div class="box">S_ter_linha</div> 
+					<div class="box">S_qua_linha</div>
+					<div class="box">ValorSubindo</div> 
+                </div>
+                <div id="dataRows">
+                    {% for _, row in df.iterrows() %}
+                        {% if (request.form.get('jogou') == '' or row['Jogou'] == request.form.get('jogou')) %}
+						
+                        <div class="row">
+                            <div class="box {% if row['Valor Primeira Linha'] >= 10 %}rose{% elif row['Valor Primeira Linha'] >= 2 %}purple{% elif row['Valor Primeira Linha'] >= 1 %}blue{% endif %}">
+                                {{ row['Valor Primeira Linha'] }}
+                            </div>
+                            <div class="box">{{ row['Hora'] }}</div>
+                            <div class="box">{{ row['Cor Coluna 6'] }}</div>
+                            <div class="box">{{ row['Cor Coluna 6 anterior anterior'] }}</div>
+                            <div class="box">
+                                {% if row['% Pague'] is not none and row['% Pague']|length > 0 %}
+                                    {{ '{:.2f}'.format(row['% Pague']|float).replace('.', ',') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}           
+                            </div>
+                            <div class="box">
+                                {% if row['%Tome'] is not none and row['%Tome']|length > 0 %}
+                                    {{ '{:.2f}'.format(row['%Tome']|float).replace('.', ',') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </div>
+                            <div class="box">
+                                {% if row['SaldoConta'] is not none and row['SaldoConta']|length > 0 %}
+                                    R$ {{ '{:,.2f}'.format(row['SaldoConta']|float).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </div>
+                            <div class="box">
+                                {% if row['1x12PrimeSemprimeV'] is not none and row['1x12PrimeSemprimeV']|length > 0 %}
+                                     {{ '{:.2f}'.format(row['1x12PrimeSemprimeV']|float).replace('.', ',') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </div>
+                            <div class="box">{{ row['Jogou'] }}</div>
+							<div class="box">{{ row['joogou_ante'] }}</div>
+							<div class="box">{{ row['Jogadas_anterior'] }}</div>
+							<div class="box">{{ row['sexto_valor_primeira_linha'] }}</div>
+							<div class="box">{{ row['sexto_valor_segunda_linha'] }}</div>
+							<div class="box">{{ row['sexto_valor_terceira_linha'] }}</div>
+							<div class="box">{{ row['sexto_valor_quarta_linha'] }}</div>
+							<div class="box">{{ row['modo_validacao'] }}</div>		
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <p class="error-message">Nenhum dado encontrado para a data selecionada.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        let valorSortDirection = true; // Inicia com a ordenação ascendente para 'Valor'
+        let horaSortDirection = false; // Inicia com a ordenação descendente para 'Hora' (mais recente primeiro)
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block'; // Exibe a mensagem de carregamento
+        }
+
+        function resetFilters() {
+            // Apenas reseta os campos do formulário, sem enviar
+            document.getElementById('filterForm').reset(); // Reseta os campos do formulário
+            document.getElementById('data').value = ''; // Reseta o campo da data
+        }
+
+        function updateValues() {
+            // Reenvia o formulário atual para atualizar os valores mais recentes
+            showLoading(); // Exibe a mensagem de carregamento
+            const form = document.getElementById('filterForm');
+            form.action = ''; // Certifique-se de que o formulário não tenha ação definida para reenviar o mesmo POST
+            form.submit(); // Envia o formulário sem limpar filtros
+        }
+
+        function sortData(column) {
+            const rows = [...document.querySelectorAll('.row:not(.header)')]; // Obtém todas as linhas de dados
+            let sortedRows;
+
+            if (column === 'valor') {
+                sortedRows = rows.sort((a, b) => {
+                    const valorA = parseFloat(a.children[0].textContent.replace(',', '.')); // Converte o valor para float
+                    const valorB = parseFloat(b.children[0].textContent.replace(',', '.'));
+                    return valorSortDirection ? valorA - valorB : valorB - valorA; // Ordena com base na direção
+                });
+                valorSortDirection = !valorSortDirection; // Alterna a direção da ordenação
+            } else if (column === 'hora') {
+                sortedRows = rows.sort((a, b) => {
+                    const [horasA, minutosA, segundosA] = a.children[1].textContent.split(':').map(Number);
+                    const totalSegundosA = horasA * 3600 + minutosA * 60 + segundosA;
+                    const [horasB, minutosB, segundosB] = b.children[1].textContent.split(':').map(Number);
+                    const totalSegundosB = horasB * 3600 + minutosB * 60 + segundosB;
+                    return horaSortDirection ? totalSegundosA - totalSegundosB : totalSegundosB - totalSegundosA;
+                });
+                horaSortDirection = !horaSortDirection; // Alterna a direção da ordenação
+            }
+
+            const dataRows = document.getElementById('dataRows');
+            dataRows.innerHTML = ''; // Limpa as linhas atuais
+            sortedRows.forEach(row => dataRows.appendChild(row)); // Adiciona as linhas ordenadas
+        }
+    </script>
+</body>
+</html>
